@@ -38,12 +38,10 @@ func TestOpcodes(t *testing.T) {
 	// 0x00E0
 	cpu = NewCPU()
 	cpu.LoadRom([]byte{0x00, 0xE0})
-	for i := range cpu.vmem {
-		cpu.vmem[i] = true
-	}
+	cpu.vmem.SetAll(true)
 	cpu.emulateCycle()
-	for i := range cpu.vmem {
-		assert.False(cpu.vmem[i])
+	for i := 0; i < cpu.vmem.Width()*cpu.vmem.Height(); i++ {
+		assert.False(cpu.vmem.GetIndex(cpu.vmem.Plane, i))
 	}
 	assert.True(cpu.draw)
 	assert.EqualValues(0x202, cpu.PC)
@@ -165,9 +163,9 @@ func TestOpcodes(t *testing.T) {
 	cpu.I = 0x300
 	copy(cpu.mem[0x300:0x305], []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
 	cpu.emulateCycle()
-	for y := byte(2); y < 7; y++ {
-		for x := byte(7); x < 15; x++ {
-			assert.EqualValues(true, cpu.vmem[cpu.getVmemIndex(x, y)])
+	for y := 2; y < 7; y++ {
+		for x := 7; x < 15; x++ {
+			assert.EqualValues(true, cpu.vmem.Get(cpu.vmem.Plane, x, y))
 		}
 	}
 	assert.EqualValues(0, cpu.V[0xF])
@@ -181,9 +179,9 @@ func TestOpcodes(t *testing.T) {
 	cpu.I = 0x300
 	copy(cpu.mem[0x300:0x305], []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
 	cpu.emulateCycle()
-	for y := byte(2); y < 7; y++ {
-		for x := byte(7); x < 15; x++ {
-			assert.EqualValues(true, cpu.vmem[cpu.getVmemIndex(x, y)])
+	for y := 2; y < 7; y++ {
+		for x := 7; x < 15; x++ {
+			assert.EqualValues(true, cpu.vmem.Get(cpu.vmem.Plane, x, y))
 		}
 	}
 	assert.EqualValues(0, cpu.V[0xF])
@@ -197,11 +195,11 @@ func TestOpcodes(t *testing.T) {
 	cpu.I = 0x300
 	copy(cpu.mem[0x300:0x305], []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
 	cpu.emulateCycle()
-	for y := byte(30); y < 35; y++ {
+	for y := 30; y < 35; y++ {
 		curY := y % 32
-		for x := byte(60); x < 68; x++ {
+		for x := 60; x < 68; x++ {
 			curX := x % 64
-			assert.EqualValues(curX >= 60 && curY >= 30, cpu.vmem[cpu.getVmemIndex(curX, curY)])
+			assert.EqualValues(curX >= 60 && curY >= 30, cpu.vmem.Get(cpu.vmem.Plane, curX, curY))
 		}
 	}
 	assert.EqualValues(0, cpu.V[0xF])
@@ -216,11 +214,11 @@ func TestOpcodes(t *testing.T) {
 	cpu.I = 0x300
 	copy(cpu.mem[0x300:0x305], []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
 	cpu.emulateCycle()
-	for y := byte(30); y < 35; y++ {
+	for y := 30; y < 35; y++ {
 		curY := y % 32
-		for x := byte(60); x < 68; x++ {
+		for x := 60; x < 68; x++ {
 			curX := x % 64
-			assert.EqualValues(curY >= 30, cpu.vmem[cpu.getVmemIndex(curX, curY)])
+			assert.EqualValues(curY >= 30, cpu.vmem.Get(cpu.vmem.Plane, curX, curY))
 		}
 	}
 	assert.EqualValues(0, cpu.V[0xF])
@@ -235,11 +233,11 @@ func TestOpcodes(t *testing.T) {
 	cpu.I = 0x300
 	copy(cpu.mem[0x300:0x305], []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
 	cpu.emulateCycle()
-	for y := byte(30); y < 35; y++ {
+	for y := 30; y < 35; y++ {
 		curY := y % 32
-		for x := byte(60); x < 68; x++ {
+		for x := 60; x < 68; x++ {
 			curX := x % 64
-			assert.EqualValues(curX >= 60, cpu.vmem[cpu.getVmemIndex(curX, curY)])
+			assert.EqualValues(curX >= 60, cpu.vmem.Get(cpu.vmem.Plane, curX, curY))
 		}
 	}
 	assert.EqualValues(0, cpu.V[0xF])
@@ -255,11 +253,11 @@ func TestOpcodes(t *testing.T) {
 	cpu.I = 0x300
 	copy(cpu.mem[0x300:0x305], []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
 	cpu.emulateCycle()
-	for y := byte(30); y < 35; y++ {
+	for y := 30; y < 35; y++ {
 		curY := y % 32
-		for x := byte(60); x < 68; x++ {
+		for x := 60; x < 68; x++ {
 			curX := x % 64
-			assert.EqualValues(true, cpu.vmem[cpu.getVmemIndex(curX, curY)])
+			assert.EqualValues(true, cpu.vmem.Get(cpu.vmem.Plane, curX, curY))
 		}
 	}
 	assert.EqualValues(0, cpu.V[0xF])
@@ -273,13 +271,13 @@ func TestOpcodes(t *testing.T) {
 	cpu.V[1] = 2
 	cpu.I = 0x300
 	copy(cpu.mem[0x300:0x305], []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
-	for x := byte(7); x < 15; x++ {
-		cpu.vmem[int(cpu.getVmemIndex(x, 3))] = true
+	for x := 7; x < 15; x++ {
+		cpu.vmem.Set(cpu.vmem.Plane, x, 3, true)
 	}
 	cpu.emulateCycle()
-	for y := byte(2); y < 7; y++ {
-		for x := byte(7); x < 15; x++ {
-			assert.EqualValues(y != 3, cpu.vmem[cpu.getVmemIndex(x, y)])
+	for y := 2; y < 7; y++ {
+		for x := 7; x < 15; x++ {
+			assert.EqualValues(y != 3, cpu.vmem.Get(cpu.vmem.Plane, x, y))
 		}
 	}
 	assert.EqualValues(1, cpu.V[0xF])

@@ -2,16 +2,19 @@ package cpu
 
 import (
 	"errors"
+
+	"github.com/philw07/pich8-go/internal/emulator"
 )
 
 const initialPC = 0x200
 
 // CPU implements the CHIP-8 CPU
 type CPU struct {
-	mem   [4096]byte
-	vmem  [64 * 32]bool
-	stack [16]uint16
-	keys  [16]bool
+	mem         [4096]byte
+	vmem        *emulator.VideoMemory
+	stack       [16]uint16
+	keys        [16]bool
+	audioBuffer *[16]byte
 
 	PC uint16
 	V  [16]byte
@@ -33,8 +36,6 @@ type CPU struct {
 	quirkDraw         bool
 	quirkPartialWrapH bool
 	quirkPartialWrapV bool
-
-	fontset []byte
 }
 
 var fontset = [...]byte{
@@ -59,6 +60,7 @@ var fontset = [...]byte{
 // NewCPU creates a new CPU instance
 func NewCPU() *CPU {
 	cpu := new(CPU)
+	cpu.vmem = emulator.NewVideoMemory()
 	cpu.PC = initialPC
 	cpu.draw = true
 	cpu.quirkLoadStore = true
@@ -204,40 +206,63 @@ func (cpu *CPU) drawSprite(x, y byte, height byte) {
 	x %= 64
 	y %= 32
 
-	sprite := cpu.mem[cpu.I : cpu.I+uint16(height)]
-	collision := false
+	bigSprite := (cpu.vmem.VideoMode == emulator.ExtendedVideoMode || cpu.quirkDraw) && height == 0
+	step := 1
+	width := 8
+	if bigSprite {
+		step = 2
+		width = 16
+	}
+	if height == 0 {
+		height = 16
+	}
 
-	for i := byte(0); i < byte(len(sprite)); i++ {
-		curY := y + i
+	collision := false
+	i := int(cpu.I)
+	length := width / 8 * int(height)
+
+	for _, plane := range [...]emulator.Plane{emulator.FirstPlane, emulator.SecondPlane} {
+		if cpu.vmem.Plane == plane || cpu.vmem.Plane == emulator.BothPlanes {
+			sprite := cpu.mem[i : i+length]
+			i += length
+
+			for k := 0; k < len(sprite); k += step {
+				curY := int(y) + k
 		// Clip or wrap
-		if curY >= 32 {
+				if curY >= cpu.vmem.Height() {
 			if cpu.quirkPartialWrapV {
-				curY %= 32
+						curY %= cpu.vmem.Height()
 			} else {
 				continue
 			}
 		}
 
-		for j := byte(0); j < 8; j++ {
-			curX := x + j
+				for j := 0; j < width; j++ {
+					curX := int(x) + j
 			// Clip or wrap
-			if curX >= 64 {
+					if curX >= cpu.vmem.Width() {
 				if cpu.quirkPartialWrapH {
-					curX %= 64
+							curX %= cpu.vmem.Width()
 				} else {
 					continue
 				}
 			}
 
-			idx := cpu.getVmemIndex(curX, curY)
-			bit := (sprite[i]>>j)&0b1 > 0
+					// Get bit
+					revJ := width - 1 - j
+					bit := sprite[k]>>revJ&0b1 > 0
+					if width == 16 {
+						bit = (uint16(sprite[k])<<8|uint16(sprite[k+1]))>>revJ&0b1 > 0
+					}
 
 			// Detect collision and draw pixel
-			if bit && cpu.vmem[idx] {
+					if bit && cpu.vmem.Get(plane, curX, curY) {
 				collision = true
 			}
-			res := cpu.vmem[idx] != bit
-			cpu.vmem[idx] = res
+					res := cpu.vmem.Get(plane, curX, curY) != bit
+					cpu.vmem.Set(plane, curX, curY, res)
+				}
+			}
 		}
 	}
 
@@ -245,8 +270,4 @@ func (cpu *CPU) drawSprite(x, y byte, height byte) {
 	if collision {
 		cpu.V[0xF] = 1
 	}
-}
-
-func (cpu *CPU) getVmemIndex(x, y byte) uint16 {
-	return (uint16(y) * 64) + uint16(x)
 }

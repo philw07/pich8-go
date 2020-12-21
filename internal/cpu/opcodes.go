@@ -11,9 +11,7 @@ func (cpu *CPU) opcodeInvalid() {
 
 // 0x00E0 - Clear display
 func (cpu *CPU) opcode0x00E0() {
-	for i := range cpu.vmem {
-		cpu.vmem[i] = false
-	}
+	cpu.vmem.Clear()
 	cpu.draw = true
 	cpu.PC += 2
 }
