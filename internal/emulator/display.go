@@ -6,6 +6,7 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/philw07/pich8-go/internal/videomemory"
 )
 
 const (
@@ -41,7 +42,7 @@ func NewDisplay() (*Display, error) {
 	}, nil
 }
 
-func (disp *Display) Draw(vmem VideoMemory) {
+func (disp *Display) Draw(vmem videomemory.VideoMemory) {
 	disp.copyFrame(vmem)
 
 	pic := pixel.PictureDataFromImage(&disp.image)
@@ -56,14 +57,14 @@ func (disp *Display) Draw(vmem VideoMemory) {
 	disp.Window.Update()
 }
 
-func (disp *Display) copyFrame(vmem VideoMemory) {
+func (disp *Display) copyFrame(vmem videomemory.VideoMemory) {
 	for x := 0; x < vmem.RenderWidth(); x++ {
 		for y := 0; y < vmem.RenderHeight(); y++ {
-			if vmem.Get(FirstPlane, x, y) && vmem.Get(SecondPlane, x, y) {
+			if vmem.Get(videomemory.FirstPlane, x, y) && vmem.Get(videomemory.SecondPlane, x, y) {
 				disp.image.Set(x, y, color.RGBA{R: 85, G: 85, B: 85, A: 255})
-			} else if vmem.Get(FirstPlane, x, y) {
+			} else if vmem.Get(videomemory.FirstPlane, x, y) {
 				disp.image.Set(x, y, color.White)
-			} else if vmem.Get(SecondPlane, x, y) {
+			} else if vmem.Get(videomemory.SecondPlane, x, y) {
 				disp.image.Set(x, y, color.RGBA{R: 170, G: 170, B: 170, A: 255})
 			} else {
 				disp.image.Set(x, y, color.Black)

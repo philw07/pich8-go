@@ -3,7 +3,7 @@ package cpu
 import (
 	"errors"
 
-	"github.com/philw07/pich8-go/internal/emulator"
+	"github.com/philw07/pich8-go/internal/videomemory"
 )
 
 const initialPC = 0x200
@@ -42,7 +42,7 @@ var fontsetBig = [...]byte{
 // CPU implements the CHIP-8 CPU
 type CPU struct {
 	mem         [4096]byte
-	vmem        *emulator.VideoMemory
+	vmem        videomemory.VideoMemory
 	stack       [16]uint16
 	keys        [16]bool
 	audioBuffer *[16]byte
@@ -73,7 +73,7 @@ type CPU struct {
 // NewCPU creates a new CPU instance
 func NewCPU() *CPU {
 	cpu := CPU{
-		vmem:           emulator.NewVideoMemory(),
+		vmem:           *videomemory.NewVideoMemory(),
 		PC:             initialPC,
 		draw:           true,
 		quirkLoadStore: true,
@@ -88,6 +88,11 @@ func NewCPU() *CPU {
 	copy(cpu.mem[0x50:0x50+len(fontsetBig)], fontsetBig[:])
 
 	return &cpu
+}
+
+// Vmem return the CPUs VideoMemory
+func (cpu *CPU) Vmem() videomemory.VideoMemory {
+	return cpu.vmem
 }
 
 // LoadRom loads the given ROM into the memory
@@ -290,7 +295,7 @@ func (cpu *CPU) drawSprite(x, y byte, height byte) {
 	x %= byte(cpu.vmem.Width())
 	y %= byte(cpu.vmem.Height())
 
-	bigSprite := (cpu.vmem.VideoMode == emulator.ExtendedVideoMode || cpu.quirkDraw) && height == 0
+	bigSprite := (cpu.vmem.VideoMode == videomemory.ExtendedVideoMode || cpu.quirkDraw) && height == 0
 	step := 1
 	width := 8
 	if bigSprite {
@@ -305,8 +310,8 @@ func (cpu *CPU) drawSprite(x, y byte, height byte) {
 	i := int(cpu.I)
 	length := width / 8 * int(height)
 
-	for _, plane := range [...]emulator.Plane{emulator.FirstPlane, emulator.SecondPlane} {
-		if cpu.vmem.Plane == plane || cpu.vmem.Plane == emulator.BothPlanes {
+	for _, plane := range [...]videomemory.Plane{videomemory.FirstPlane, videomemory.SecondPlane} {
+		if cpu.vmem.Plane == plane || cpu.vmem.Plane == videomemory.BothPlanes {
 			sprite := cpu.mem[i : i+length]
 			i += length
 

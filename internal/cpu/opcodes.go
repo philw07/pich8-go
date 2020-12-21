@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math/rand"
 
-	"github.com/philw07/pich8-go/internal/emulator"
+	"github.com/philw07/pich8-go/internal/videomemory"
 )
 
 func (cpu *CPU) opcodeInvalid() {
@@ -61,19 +61,19 @@ func (cpu *CPU) opcodeSChip0x00FD() {
 
 // 0x00FE - SCHIP - Disable extended screen mode
 func (cpu *CPU) opcodeSChip0x00FE() {
-	cpu.vmem.VideoMode = emulator.DefaultVideoMode
+	cpu.vmem.VideoMode = videomemory.DefaultVideoMode
 	cpu.PC += 2
 }
 
 // 0x00FF - SCHIP - Enable extended screen mode
 func (cpu *CPU) opcodeSChip0x00FF() {
-	cpu.vmem.VideoMode = emulator.ExtendedVideoMode
+	cpu.vmem.VideoMode = videomemory.ExtendedVideoMode
 	cpu.PC += 2
 }
 
 // 0x0230 - HiRes - Clear screen
 func (cpu *CPU) opcodeHiRes0x0230() {
-	if cpu.vmem.VideoMode == emulator.HiResVideoMode {
+	if cpu.vmem.VideoMode == videomemory.HiResVideoMode {
 		cpu.vmem.Clear()
 		cpu.draw = true
 		cpu.PC += 2
@@ -95,7 +95,7 @@ func (cpu *CPU) opcode0x1NNN(nnn uint16) {
 // 0x1260 - Activate HiRes mode - only if it's the first opcode
 func (cpu *CPU) opcodeHiRes0x1260(nnn uint16) {
 	if cpu.PC == initialPC {
-		cpu.vmem.VideoMode = emulator.HiResVideoMode
+		cpu.vmem.VideoMode = videomemory.HiResVideoMode
 		cpu.PC = 0x2C0
 	} else {
 		cpu.opcode0x1NNN(nnn)
@@ -319,7 +319,7 @@ func (cpu *CPU) opcodeXOChip0xF000() {
 
 // 0xFN01 - XO-CHIP - Plane N
 func (cpu *CPU) opcodeXOChip0xFN01(n byte) {
-	cpu.vmem.Plane = emulator.Plane(n)
+	cpu.vmem.Plane = videomemory.Plane(n)
 	cpu.PC += 2
 }
 

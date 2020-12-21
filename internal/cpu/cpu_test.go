@@ -3,7 +3,7 @@ package cpu
 import (
 	"testing"
 
-	"github.com/philw07/pich8-go/internal/emulator"
+	"github.com/philw07/pich8-go/internal/videomemory"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -441,17 +441,17 @@ func TestOpcodesSChip(t *testing.T) {
 	cpu = NewCPU()
 	cpu.LoadRom([]byte{0x00, 0xFF, 0x00, 0xFE})
 	cpu.emulateCycle()
-	assert.EqualValues(emulator.ExtendedVideoMode, cpu.vmem.VideoMode)
+	assert.EqualValues(videomemory.ExtendedVideoMode, cpu.vmem.VideoMode)
 	assert.EqualValues(0x202, cpu.PC)
 	cpu.emulateCycle()
-	assert.EqualValues(emulator.DefaultVideoMode, cpu.vmem.VideoMode)
+	assert.EqualValues(videomemory.DefaultVideoMode, cpu.vmem.VideoMode)
 	assert.EqualValues(0x204, cpu.PC)
 
 	// 0xDXYN
 	cpu = NewCPU()
 	cpu.LoadRom([]byte{0x00, 0xFF, 0xD0, 0x10})
 	cpu.emulateCycle()
-	assert.EqualValues(emulator.ExtendedVideoMode, cpu.vmem.VideoMode)
+	assert.EqualValues(videomemory.ExtendedVideoMode, cpu.vmem.VideoMode)
 	assert.EqualValues(0x202, cpu.PC)
 	cpu.V[0] = 65
 	cpu.V[1] = 2
@@ -550,16 +550,16 @@ func TestOpcodesXOChip(t *testing.T) {
 	cpu.LoadRom([]byte{0xF0, 0x01, 0xF1, 0x01, 0xF2, 0x01, 0xF3, 0x01})
 	cpu.emulateCycle()
 	assert.EqualValues(0x202, cpu.PC)
-	assert.EqualValues(emulator.NoPlane, cpu.vmem.Plane)
+	assert.EqualValues(videomemory.NoPlane, cpu.vmem.Plane)
 	cpu.emulateCycle()
 	assert.EqualValues(0x204, cpu.PC)
-	assert.EqualValues(emulator.FirstPlane, cpu.vmem.Plane)
+	assert.EqualValues(videomemory.FirstPlane, cpu.vmem.Plane)
 	cpu.emulateCycle()
 	assert.EqualValues(0x206, cpu.PC)
-	assert.EqualValues(emulator.SecondPlane, cpu.vmem.Plane)
+	assert.EqualValues(videomemory.SecondPlane, cpu.vmem.Plane)
 	cpu.emulateCycle()
 	assert.EqualValues(0x208, cpu.PC)
-	assert.EqualValues(emulator.BothPlanes, cpu.vmem.Plane)
+	assert.EqualValues(videomemory.BothPlanes, cpu.vmem.Plane)
 
 	// 0xF002
 	buf := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF}

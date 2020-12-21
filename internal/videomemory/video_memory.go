@@ -1,4 +1,4 @@
-package emulator
+package videomemory
 
 type VideoMode byte
 type Plane byte
