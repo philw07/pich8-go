@@ -3,6 +3,7 @@ package cpu
 import (
 	"testing"
 
+	"github.com/philw07/pich8-go/internal/emulator"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,6 +13,7 @@ func TestInitialization(t *testing.T) {
 	cpu := NewCPU()
 	assert.EqualValues(0x200, cpu.PC)
 	assert.EqualValues(fontset[:], cpu.mem[:len(fontset)])
+	assert.EqualValues(fontsetBig[:], cpu.mem[0x50:0x50+len(fontsetBig)])
 }
 
 func TestLoadRom(t *testing.T) {
@@ -32,6 +34,12 @@ func TestOpcodes(t *testing.T) {
 	// Invalid
 	cpu := NewCPU()
 	cpu.LoadRom([]byte{0xF0, 0xFF})
+	cpu.emulateCycle()
+	assert.EqualValues(0x202, cpu.PC)
+
+	// 0x0NNN
+	cpu = NewCPU()
+	cpu.LoadRom([]byte{0x03, 0x33})
 	cpu.emulateCycle()
 	assert.EqualValues(0x202, cpu.PC)
 
@@ -417,6 +425,159 @@ func TestOpcodes(t *testing.T) {
 	assert.EqualValues(0, cpu.V[6])
 	assert.EqualValues(0x202, cpu.PC)
 	assert.EqualValues(0x208, cpu.I)
+}
+
+func TestOpcodesSChip(t *testing.T) {
+	assert := assert.New(t)
+
+	// 0x00FD
+	cpu := NewCPU()
+	cpu.LoadRom([]byte{0x00, 0xFD})
+	cpu.emulateCycle()
+	assert.EqualValues(0x200, cpu.PC)
+	assert.EqualValues([]byte{0x12, 0x00}, cpu.mem[0x200:0x202])
+
+	// 0x00FF & 0x00FE
+	cpu = NewCPU()
+	cpu.LoadRom([]byte{0x00, 0xFF, 0x00, 0xFE})
+	cpu.emulateCycle()
+	assert.EqualValues(emulator.ExtendedVideoMode, cpu.vmem.VideoMode)
+	assert.EqualValues(0x202, cpu.PC)
+	cpu.emulateCycle()
+	assert.EqualValues(emulator.DefaultVideoMode, cpu.vmem.VideoMode)
+	assert.EqualValues(0x204, cpu.PC)
+
+	// 0xDXYN
+	cpu = NewCPU()
+	cpu.LoadRom([]byte{0x00, 0xFF, 0xD0, 0x10})
+	cpu.emulateCycle()
+	assert.EqualValues(emulator.ExtendedVideoMode, cpu.vmem.VideoMode)
+	assert.EqualValues(0x202, cpu.PC)
+	cpu.V[0] = 65
+	cpu.V[1] = 2
+	cpu.I = 0x300
+	for i := 0x300; i < 0x320; i++ {
+		cpu.mem[i] = 0xFF
+	}
+	cpu.emulateCycle()
+	for x := 65; x < 81; x++ {
+		for y := 2; y < 18; y++ {
+			assert.True(cpu.vmem.Get(cpu.vmem.Plane, x, y))
+		}
+	}
+	assert.EqualValues(0, cpu.V[0xF])
+	assert.True(cpu.draw)
+	assert.EqualValues(0x204, cpu.PC)
+
+	// 0xFX30
+	cpu = NewCPU()
+	cpu.LoadRom([]byte{0xF0, 0x30})
+	for i := 0; i < 10; i++ {
+		cpu.V[0] = byte(i)
+		cpu.emulateCycle()
+		assert.EqualValues(0x50+i*10, cpu.I)
+		cpu.PC -= 2
+	}
+
+	// 0xFX75
+	reg := []byte{0x12, 0x34, 0x56, 0x78, 0x9A, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	cpu = NewCPU()
+	cpu.LoadRom([]byte{0xF4, 0x75})
+	copy(cpu.V[:], reg)
+	cpu.emulateCycle()
+	assert.EqualValues(cpu.V[:5], cpu.RPL[:5])
+	assert.Zero(cpu.RPL[5])
+	assert.EqualValues(0x202, cpu.PC)
+
+	// 0xFX85
+	cpu = NewCPU()
+	cpu.LoadRom([]byte{0xF4, 0x85})
+	copy(cpu.RPL[:], reg)
+	cpu.emulateCycle()
+	assert.EqualValues(cpu.RPL[:5], cpu.V[:5])
+	assert.Zero(cpu.V[5])
+	assert.EqualValues(0x202, cpu.PC)
+}
+
+func TestOpcodesXOChip(t *testing.T) {
+	assert := assert.New(t)
+
+	regs := []byte{1, 2, 3, 4, 5}
+
+	// 0x5XY2
+	cpu := NewCPU()
+	cpu.LoadRom([]byte{0x51, 0x52})
+	copy(cpu.V[1:6], regs)
+	cpu.I = 0x300
+	cpu.emulateCycle()
+	assert.EqualValues(regs, cpu.mem[0x300:0x305])
+	assert.EqualValues(0x202, cpu.PC)
+
+	cpu = NewCPU()
+	cpu.LoadRom([]byte{0x58, 0x42})
+	copy(cpu.V[4:9], regs)
+	cpu.I = 0x300
+	cpu.emulateCycle()
+	assert.EqualValues(regs, cpu.mem[0x300:0x305])
+	assert.EqualValues(0x202, cpu.PC)
+
+	// 0x5XY3
+	cpu = NewCPU()
+	cpu.LoadRom([]byte{0x51, 0x53})
+	copy(cpu.mem[0x300:0x306], regs)
+	cpu.I = 0x300
+	cpu.emulateCycle()
+	assert.EqualValues(regs, cpu.V[1:6])
+	assert.EqualValues(0x202, cpu.PC)
+
+	cpu = NewCPU()
+	cpu.LoadRom([]byte{0x5F, 0xB3})
+	copy(cpu.mem[0x300:0x306], regs)
+	cpu.I = 0x300
+	cpu.emulateCycle()
+	assert.EqualValues(regs, cpu.V[0xB:0x10])
+	assert.EqualValues(0x202, cpu.PC)
+
+	// 0xF000 NNNN
+	cpu = NewCPU()
+	cpu.LoadRom([]byte{0xF0, 0x00, 0xFE, 0xDC})
+	cpu.emulateCycle()
+	assert.EqualValues(0xFEDC, cpu.I)
+	assert.EqualValues(0x204, cpu.PC)
+
+	// 0xFN01
+	cpu = NewCPU()
+	cpu.LoadRom([]byte{0xF0, 0x01, 0xF1, 0x01, 0xF2, 0x01, 0xF3, 0x01})
+	cpu.emulateCycle()
+	assert.EqualValues(0x202, cpu.PC)
+	assert.EqualValues(emulator.NoPlane, cpu.vmem.Plane)
+	cpu.emulateCycle()
+	assert.EqualValues(0x204, cpu.PC)
+	assert.EqualValues(emulator.FirstPlane, cpu.vmem.Plane)
+	cpu.emulateCycle()
+	assert.EqualValues(0x206, cpu.PC)
+	assert.EqualValues(emulator.SecondPlane, cpu.vmem.Plane)
+	cpu.emulateCycle()
+	assert.EqualValues(0x208, cpu.PC)
+	assert.EqualValues(emulator.BothPlanes, cpu.vmem.Plane)
+
+	// 0xF002
+	buf := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF}
+	cpu = NewCPU()
+	cpu.LoadRom([]byte{0xF0, 0x02})
+	copy(cpu.mem[0x300:0x310], buf)
+	cpu.I = 0x300
+	cpu.emulateCycle()
+	for i := range buf {
+		assert.EqualValues(buf[i], cpu.audioBuffer[i])
+	}
+	assert.EqualValues(0x202, cpu.PC)
+
+	// Skip with 4 byte opcode
+	cpu = NewCPU()
+	cpu.LoadRom([]byte{0x30, 0x00, 0xF0, 0x00, 0x12, 0x34, 0x12, 0x00})
+	cpu.emulateCycle()
+	assert.EqualValues(0x206, cpu.PC)
 }
 
 func TestOpcodesArithmetic(t *testing.T) {

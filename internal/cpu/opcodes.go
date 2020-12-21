@@ -3,9 +3,25 @@ package cpu
 import (
 	"errors"
 	"math/rand"
+
+	"github.com/philw07/pich8-go/internal/emulator"
 )
 
 func (cpu *CPU) opcodeInvalid() {
+	cpu.PC += 2
+}
+
+// 0x00CN - SCHIP - Scroll display N lines down
+func (cpu *CPU) opcodeSChip0x00CN(n byte) {
+	cpu.vmem.ScrollDown(int(n))
+	cpu.draw = true
+	cpu.PC += 2
+}
+
+// 0x00DN - XO-CHIP - Scroll display N lines up
+func (cpu *CPU) opcodeXOChip0x00DN(n byte) {
+	cpu.vmem.ScrollUp(int(n))
+	cpu.draw = true
 	cpu.PC += 2
 }
 
@@ -22,6 +38,50 @@ func (cpu *CPU) opcode0x00EE() {
 	cpu.PC = cpu.stack[cpu.sp] + 2
 }
 
+// 0x00FB - SCHIP - Scroll display 4 pixels right
+func (cpu *CPU) opcodeSChip0x00FB() {
+	cpu.vmem.ScrollLeft()
+	cpu.draw = true
+	cpu.PC += 2
+}
+
+// 0x00FC - SCHIP - Scroll display 4 pixels left
+func (cpu *CPU) opcodeSChip0x00FC() {
+	cpu.vmem.ScrollRight()
+	cpu.draw = true
+	cpu.PC += 2
+}
+
+// 0x00FD - SCHIP - Exit interpreter
+func (cpu *CPU) opcodeSChip0x00FD() {
+	// Instead of actually exiting, we're creating an endless loop
+	copy(cpu.mem[0x200:0x202], []byte{0x12, 0x00})
+	cpu.PC = 0x200
+}
+
+// 0x00FE - SCHIP - Disable extended screen mode
+func (cpu *CPU) opcodeSChip0x00FE() {
+	cpu.vmem.VideoMode = emulator.DefaultVideoMode
+	cpu.PC += 2
+}
+
+// 0x00FF - SCHIP - Enable extended screen mode
+func (cpu *CPU) opcodeSChip0x00FF() {
+	cpu.vmem.VideoMode = emulator.ExtendedVideoMode
+	cpu.PC += 2
+}
+
+// 0x0230 - HiRes - Clear screen
+func (cpu *CPU) opcodeHiRes0x0230() {
+	if cpu.vmem.VideoMode == emulator.HiResVideoMode {
+		cpu.vmem.Clear()
+		cpu.draw = true
+		cpu.PC += 2
+	} else {
+		cpu.opcode0x0NNN()
+	}
+}
+
 // 0x0NNN - Legacy SYS call, ignored
 func (cpu *CPU) opcode0x0NNN() {
 	cpu.PC += 2
@@ -30,6 +90,16 @@ func (cpu *CPU) opcode0x0NNN() {
 // 0x1NNN - Goto nnn
 func (cpu *CPU) opcode0x1NNN(nnn uint16) {
 	cpu.PC = nnn
+}
+
+// 0x1260 - Activate HiRes mode - only if it's the first opcode
+func (cpu *CPU) opcodeHiRes0x1260(nnn uint16) {
+	if cpu.PC == initialPC {
+		cpu.vmem.VideoMode = emulator.HiResVideoMode
+		cpu.PC = 0x2C0
+	} else {
+		cpu.opcode0x1NNN(nnn)
+	}
 }
 
 // 0x2NNN - Call subroutine at nnn
@@ -47,7 +117,7 @@ func (cpu *CPU) opcode0x2NNN(nnn uint16) error {
 // 0x3XNN - Skip next instruction if Vx == nn
 func (cpu *CPU) opcode0x3XNN(x, nn byte) {
 	if cpu.V[x] == nn {
-		cpu.PC += 2
+		cpu.skipNextInstruction()
 	}
 	cpu.PC += 2
 }
@@ -55,16 +125,40 @@ func (cpu *CPU) opcode0x3XNN(x, nn byte) {
 // 0x4XNN - Skip next instruction if Vx != nn
 func (cpu *CPU) opcode0x4XNN(x, nn byte) {
 	if cpu.V[x] != nn {
-		cpu.PC += 2
+		cpu.skipNextInstruction()
 	}
 	cpu.PC += 2
 }
 
 // 0x5XY0 - Skip next instruction if Vx == Vy
-func (cpu *CPU) opcode0x5XNN(x, y byte) {
+func (cpu *CPU) opcode0x5XY0(x, y byte) {
 	if cpu.V[x] == cpu.V[y] {
-		cpu.PC += 2
+		cpu.skipNextInstruction()
 	}
+	cpu.PC += 2
+}
+
+// 0x5XY2 - XO-CHIP - Store Vx - Vy
+func (cpu *CPU) opcodeXOChip0x5XY2(x, y byte) {
+	first := x
+	last := y
+	if y < x {
+		first = y
+		last = x
+	}
+	copy(cpu.mem[cpu.I:cpu.I+uint16(last)-uint16(first)+1], cpu.V[first:last+1])
+	cpu.PC += 2
+}
+
+// 0x5XY3 - XO-CHIP - Load Vx - Vy
+func (cpu *CPU) opcodeXOChip0x5XY3(x, y byte) {
+	first := x
+	last := y
+	if y < x {
+		first = y
+		last = x
+	}
+	copy(cpu.V[first:last+1], cpu.mem[cpu.I:cpu.I+uint16(last)-uint16(first)+1])
 	cpu.PC += 2
 }
 
@@ -165,7 +259,7 @@ func (cpu *CPU) opcode0x8XYE(x, y byte) {
 // 0x9XY0 - Skip next instruction if Vx != Vy
 func (cpu *CPU) opcode0x9XY0(x, y byte) {
 	if cpu.V[x] != cpu.V[y] {
-		cpu.PC += 2
+		cpu.skipNextInstruction()
 	}
 	cpu.PC += 2
 }
@@ -204,7 +298,7 @@ func (cpu *CPU) opcode0xDXYN(x, y, n byte) {
 // 0xEX9E - Skip next instruction if key(Vx) is pressed
 func (cpu *CPU) opcode0xEX9E(x byte) {
 	if cpu.keys[cpu.V[x]] {
-		cpu.PC += 2
+		cpu.skipNextInstruction()
 	}
 	cpu.PC += 2
 }
@@ -212,8 +306,27 @@ func (cpu *CPU) opcode0xEX9E(x byte) {
 // 0xEXA1 - Skip next instruction if key(Vx) is not pressed
 func (cpu *CPU) opcode0xEXA1(x byte) {
 	if !cpu.keys[cpu.V[x]] {
-		cpu.PC += 2
+		cpu.skipNextInstruction()
 	}
+	cpu.PC += 2
+}
+
+// 0xF000 NNNN - XO-CHIP - I = NNNN
+func (cpu *CPU) opcodeXOChip0xF000() {
+	cpu.I = uint16(cpu.mem[cpu.PC+2])<<8 | uint16(cpu.mem[cpu.PC+3])
+	cpu.PC += 4
+}
+
+// 0xFN01 - XO-CHIP - Plane N
+func (cpu *CPU) opcodeXOChip0xFN01(n byte) {
+	cpu.vmem.Plane = emulator.Plane(n)
+	cpu.PC += 2
+}
+
+// 0xF002 - XO-CHIP - Audio
+func (cpu *CPU) opcodeXOChip0xF002() {
+	cpu.audioBuffer = &[16]byte{}
+	copy(cpu.audioBuffer[:], cpu.mem[cpu.I:cpu.I+16])
 	cpu.PC += 2
 }
 
@@ -254,6 +367,12 @@ func (cpu *CPU) opcode0xFX29(x byte) {
 	cpu.PC += 2
 }
 
+// 0xFX30 - SCHIP - I = 10-byte sprite_add(Vx)
+func (cpu *CPU) opcodeSChip0xFX30(x byte) {
+	cpu.I = 0x50 + uint16(cpu.V[x])*10
+	cpu.PC += 2
+}
+
 // 0xFX33 - set_BCD(Vx)
 func (cpu *CPU) opcode0xFX33(x byte) {
 	hundreds := cpu.V[x] / 100
@@ -291,6 +410,18 @@ func (cpu *CPU) opcode0xFX65(x byte) {
 	cpu.PC += 2
 }
 
+// 0xFX75 - SCHIP - Store V0..VX in RPL user flags (X < 8)
+func (cpu *CPU) opcodeSChip0xFX75(x byte) {
+	copy(cpu.RPL[:x+1], cpu.V[:x+1])
+	cpu.PC += 2
+}
+
+// 0xFX85 - SCHIP - Read V0..VX from RPL user flags (X < 8)
+func (cpu *CPU) opcodeSChip0xFX85(x byte) {
+	copy(cpu.V[:x+1], cpu.RPL[:x+1])
+	cpu.PC += 2
+}
+
 func (cpu *CPU) writeVf(reg, value, vf byte) {
 	if cpu.quirkVfOrder {
 		cpu.V[reg] = value
@@ -298,5 +429,14 @@ func (cpu *CPU) writeVf(reg, value, vf byte) {
 	} else {
 		cpu.V[0xF] = vf
 		cpu.V[reg] = value
+	}
+}
+
+func (cpu *CPU) skipNextInstruction() {
+	cpu.PC += 2
+
+	// Check if next instruction is a 4 byte instruction (XO-CHIP)
+	if cpu.mem[cpu.PC] == 0xF0 && cpu.mem[cpu.PC+1] == 0 {
+		cpu.PC += 2
 	}
 }
