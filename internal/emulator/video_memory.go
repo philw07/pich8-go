@@ -30,10 +30,10 @@ type VideoMemory struct {
 
 // NewVideoMemory creates and initializes a new instance
 func NewVideoMemory() *VideoMemory {
-	vmem := new(VideoMemory)
-	vmem.VideoMode = DefaultVideoMode
-	vmem.Plane = FirstPlane
-	return vmem
+	return &VideoMemory{
+		VideoMode: DefaultVideoMode,
+		Plane:     FirstPlane,
+	}
 }
 
 func (vmem *VideoMemory) Set(plane Plane, x, y int, value bool) {

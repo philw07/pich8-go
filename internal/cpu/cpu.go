@@ -72,21 +72,22 @@ type CPU struct {
 
 // NewCPU creates a new CPU instance
 func NewCPU() *CPU {
-	cpu := new(CPU)
-	cpu.vmem = emulator.NewVideoMemory()
-	cpu.PC = initialPC
-	cpu.draw = true
-	cpu.quirkLoadStore = true
-	cpu.quirkShift = true
-	cpu.quirkJump = true
-	cpu.quirkVfOrder = true
-	cpu.quirkDraw = true
+	cpu := CPU{
+		vmem:           emulator.NewVideoMemory(),
+		PC:             initialPC,
+		draw:           true,
+		quirkLoadStore: true,
+		quirkShift:     true,
+		quirkJump:      true,
+		quirkVfOrder:   true,
+		quirkDraw:      true,
+	}
 
 	// Load font sets
 	copy(cpu.mem[0:len(fontset)], fontset[:])
 	copy(cpu.mem[0x50:0x50+len(fontsetBig)], fontsetBig[:])
 
-	return cpu
+	return &cpu
 }
 
 // LoadRom loads the given ROM into the memory
