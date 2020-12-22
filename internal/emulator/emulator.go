@@ -12,10 +12,13 @@ const (
 	nanosPerTimer  = 1_000_000_000 / timerFrequency
 )
 
+var cpuSpeeds = [...]int{420, 600, 720, 900, 1200}
+
 // Emulator implements the CHIP-8 emulator
 type Emulator struct {
 	cpu      cpu.CPU
 	cpuSpeed int
+	cpuMult  bool
 	display  Display
 	input    [16]bool
 
@@ -42,7 +45,7 @@ func NewEmulator() (*Emulator, error) {
 	now := time.Now()
 	return &Emulator{
 		cpu:      *cpu.NewCPU(),
-		cpuSpeed: 720,
+		cpuSpeed: 2,
 		display:  *disp,
 
 		lastCycle:           now,
@@ -78,6 +81,14 @@ func (emu *Emulator) setPause(pause bool) {
 	}
 }
 
+func (emu *Emulator) getCPUSpeed() int {
+	speed := cpuSpeeds[emu.cpuSpeed]
+	if emu.cpuMult {
+		speed *= 50
+	}
+	return speed
+}
+
 // Run runs the main loop of the emulator
 func (emu *Emulator) Run() {
 	for !emu.display.Window.Closed() {
@@ -95,14 +106,14 @@ func (emu *Emulator) Run() {
 func (emu *Emulator) performEmulation() {
 	if !emu.pause {
 		// Emulate CPU cycles
-		nanosPerCycle := 1_000_000_000 / emu.cpuSpeed
+		nanosPerCycle := 1_000_000_000 / emu.getCPUSpeed()
 		if time.Since(emu.lastCycle).Nanoseconds() >= 10*int64(nanosPerCycle) {
 			cycles := int(time.Since(emu.lastCycle).Nanoseconds()) / nanosPerCycle
 			emu.lastCycle = time.Now()
 
 			// Check if additional cycles are needed
 			if time.Since(emu.lastCorrectionCPU).Seconds() >= 0.25 {
-				target := emu.cpuSpeed / 4
+				target := emu.getCPUSpeed() / 4
 				if emu.counterCPU < target {
 					cycles += target - emu.counterCPU
 				}
@@ -184,5 +195,21 @@ func (emu *Emulator) handleInput() {
 	}
 	if emu.display.Window.JustPressed(pixelgl.KeyM) {
 		emu.mute = !emu.mute
+	}
+	if emu.display.Window.JustPressed(pixelgl.KeyPageUp) {
+		if emu.cpuSpeed < len(cpuSpeeds)-1 {
+			emu.cpuSpeed++
+		}
+		emu.display.DisplayCPUSpeed(emu.getCPUSpeed())
+	}
+	if emu.display.Window.JustPressed(pixelgl.KeyPageDown) {
+		if emu.cpuSpeed > 0 {
+			emu.cpuSpeed--
+		}
+		emu.display.DisplayCPUSpeed(emu.getCPUSpeed())
+	}
+	if emu.display.Window.JustPressed(pixelgl.KeyX) {
+		emu.cpuMult = !emu.cpuMult
+		emu.display.DisplayCPUSpeed(emu.getCPUSpeed())
 	}
 }

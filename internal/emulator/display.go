@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"time"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
@@ -21,10 +22,12 @@ const (
 
 // Display represents a display for the CHIP-8 emulator
 type Display struct {
-	Window     *pixelgl.Window
-	fpsCounter FpsCounter
-	fpsText    *text.Text
-	DisplayFps bool
+	Window       *pixelgl.Window
+	fpsCounter   FpsCounter
+	fpsText      *text.Text
+	lastCPUSpeed time.Time
+	cpuSpeedText *text.Text
+	DisplayFps   bool
 }
 
 // NewDisplay creates and initializes a new Display instance
@@ -46,11 +49,11 @@ func NewDisplay() (*Display, error) {
 	}
 
 	textAtlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
-	fpsText := text.New(pixel.ZV, textAtlas)
 
 	return &Display{
-		Window:  win,
-		fpsText: fpsText,
+		Window:       win,
+		fpsText:      text.New(pixel.ZV, textAtlas),
+		cpuSpeedText: text.New(pixel.ZV, textAtlas),
 	}, nil
 }
 
@@ -66,6 +69,13 @@ func (disp *Display) ToggleFullscreen() {
 // ToggleVSync toggles between vsync on and off
 func (disp *Display) ToggleVSync() {
 	disp.Window.SetVSync(!disp.Window.VSync())
+}
+
+// DisplayCPUSpeed displays the given speed for a short time
+func (disp *Display) DisplayCPUSpeed(speed int) {
+	disp.lastCPUSpeed = time.Now()
+	disp.cpuSpeedText.Clear()
+	fmt.Fprintf(disp.cpuSpeedText, "%vHz", speed)
 }
 
 // Draw draws the content of the given VideoMemory to the window
@@ -85,8 +95,14 @@ func (disp *Display) Draw(vmem videomemory.VideoMemory) {
 	fps := disp.fpsCounter.Tick()
 	if disp.DisplayFps {
 		disp.fpsText.Clear()
-		fmt.Fprintf(disp.fpsText, "%d", int(fps))
+		fmt.Fprintf(disp.fpsText, "%v", int(fps))
 		disp.fpsText.Draw(disp.Window, pixel.IM)
+	}
+
+	// Display CPU speed
+	if time.Since(disp.lastCPUSpeed).Seconds() <= 2 {
+		xPos := disp.Window.Bounds().W() - disp.cpuSpeedText.Bounds().W()
+		disp.cpuSpeedText.Draw(disp.Window, pixel.IM.Moved(pixel.V(xPos, 0)))
 	}
 
 	disp.Window.Update()
