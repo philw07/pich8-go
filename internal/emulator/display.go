@@ -54,6 +54,20 @@ func NewDisplay() (*Display, error) {
 	}, nil
 }
 
+// ToggleFullscreen toggles between fullscreen and windowed
+func (disp *Display) ToggleFullscreen() {
+	if disp.Window.Monitor() == nil {
+		disp.Window.SetMonitor(pixelgl.PrimaryMonitor())
+	} else {
+		disp.Window.SetMonitor(nil)
+	}
+}
+
+// ToggleVSync toggles between vsync on and off
+func (disp *Display) ToggleVSync() {
+	disp.Window.SetVSync(!disp.Window.VSync())
+}
+
 // Draw draws the content of the given VideoMemory to the window
 func (disp *Display) Draw(vmem videomemory.VideoMemory) {
 	disp.Window.Clear(color.Black)

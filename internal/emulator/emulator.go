@@ -145,6 +145,7 @@ func (emu *Emulator) performEmulation() {
 }
 
 func (emu *Emulator) handleInput() {
+	// CHIP-8 keys
 	emu.input[0] = emu.display.Window.Pressed(pixelgl.Key1)
 	emu.input[1] = emu.display.Window.Pressed(pixelgl.Key2)
 	emu.input[2] = emu.display.Window.Pressed(pixelgl.Key3)
@@ -161,4 +162,27 @@ func (emu *Emulator) handleInput() {
 	emu.input[13] = emu.display.Window.Pressed(pixelgl.KeyX)
 	emu.input[14] = emu.display.Window.Pressed(pixelgl.KeyC)
 	emu.input[15] = emu.display.Window.Pressed(pixelgl.KeyV)
+
+	// Commands
+	if emu.display.Window.JustPressed(pixelgl.KeyEscape) {
+		emu.display.Window.SetClosed(true)
+	}
+	if emu.display.Window.JustPressed(pixelgl.KeyF1) {
+		emu.display.DisplayFps = !emu.display.DisplayFps
+	}
+	if emu.display.Window.JustPressed(pixelgl.KeyF2) {
+		emu.display.ToggleVSync()
+	}
+	if emu.display.Window.JustPressed(pixelgl.KeyF5) {
+		emu.reset()
+	}
+	if emu.display.Window.JustPressed(pixelgl.KeyF11) {
+		emu.display.ToggleFullscreen()
+	}
+	if emu.display.Window.JustPressed(pixelgl.KeyP) {
+		emu.setPause(!emu.pause)
+	}
+	if emu.display.Window.JustPressed(pixelgl.KeyM) {
+		emu.mute = !emu.mute
+	}
 }
