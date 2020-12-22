@@ -74,7 +74,7 @@ func (emu *Emulator) setPause(pause bool) {
 	} else {
 		// "Subtract" paused time so the emulation doesn't jump
 		diff := time.Since(emu.pauseTime)
-		emu.lastCycle.Add(diff)
+		emu.lastCycle = emu.lastCycle.Add(diff)
 	}
 }
 
