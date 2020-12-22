@@ -1,12 +1,15 @@
 package emulator
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/faiface/pixel/text"
 	"github.com/philw07/pich8-go/internal/videomemory"
+	"golang.org/x/image/font/basicfont"
 )
 
 const (
@@ -18,7 +21,10 @@ const (
 
 // Display represents a display for the CHIP-8 emulator
 type Display struct {
-	Window *pixelgl.Window
+	Window     *pixelgl.Window
+	fpsCounter FpsCounter
+	fpsText    *text.Text
+	DisplayFps bool
 }
 
 // NewDisplay creates and initializes a new Display instance
@@ -39,24 +45,36 @@ func NewDisplay() (*Display, error) {
 		return nil, err
 	}
 
+	textAtlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
+	fpsText := text.New(pixel.ZV, textAtlas)
+
 	return &Display{
-		Window: win,
+		Window:  win,
+		fpsText: fpsText,
 	}, nil
 }
 
 // Draw draws the content of the given VideoMemory to the window
 func (disp *Display) Draw(vmem videomemory.VideoMemory) {
-	image := disp.copyFrameToImage(vmem)
+	disp.Window.Clear(color.Black)
 
+	// Draw
+	image := disp.copyFrameToImage(vmem)
 	pic := pixel.PictureDataFromImage(image)
 	sprite := pixel.NewSprite(pic, pic.Bounds())
-
 	mat := pixel.IM
 	mat = mat.Moved(disp.Window.Bounds().Center())
 	mat = mat.ScaledXY(disp.Window.Bounds().Center(), pixel.V(disp.Window.Bounds().W()/float64(vmem.RenderWidth()), disp.Window.Bounds().H()/float64(vmem.RenderHeight())))
-
-	disp.Window.Clear(color.Black)
 	sprite.Draw(disp.Window, mat)
+
+	// Update and draw fps
+	fps := disp.fpsCounter.Tick()
+	if disp.DisplayFps {
+		disp.fpsText.Clear()
+		fmt.Fprintf(disp.fpsText, "%d", int(fps))
+		disp.fpsText.Draw(disp.Window, pixel.IM)
+	}
+
 	disp.Window.Update()
 }
 
