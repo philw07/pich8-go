@@ -36,7 +36,7 @@ func NewDisplay() (*Display, error) {
 		// Icon: TODO:
 		Bounds:    pixel.R(0, 0, 10*c8Width, 10*c8Height),
 		Position:  pixel.V(montitorWidth/2-5*c8Width, monitorHeight/2-5*c8Height),
-		VSync:     true,
+		VSync:     false,
 		Resizable: true,
 	}
 
