@@ -41,7 +41,7 @@ var fontsetBig = [...]byte{
 
 // CPU implements the CHIP-8 CPU
 type CPU struct {
-	mem         [4096]byte
+	mem         [65536]byte
 	vmem        videomemory.VideoMemory
 	stack       [16]uint16
 	keys        [16]bool
