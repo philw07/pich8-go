@@ -16,11 +16,11 @@ var cpuSpeeds = [...]int{420, 600, 720, 900, 1200}
 
 // Emulator implements the CHIP-8 emulator
 type Emulator struct {
-	cpu      cpu.CPU
-	cpuSpeed int
-	cpuMult  bool
-	display  Display
-	input    [16]bool
+	cpu         cpu.CPU
+	cpuSpeedIdx int
+	cpuMult     bool
+	display     Display
+	input       [16]bool
 
 	rom  []byte
 	mute bool
@@ -44,9 +44,9 @@ func NewEmulator() (*Emulator, error) {
 
 	now := time.Now()
 	return &Emulator{
-		cpu:      *cpu.NewCPU(),
-		cpuSpeed: 2,
-		display:  *disp,
+		cpu:         *cpu.NewCPU(),
+		cpuSpeedIdx: 2,
+		display:     *disp,
 
 		lastCycle:           now,
 		lastCorrectionCPU:   now,
@@ -82,7 +82,7 @@ func (emu *Emulator) setPause(pause bool) {
 }
 
 func (emu *Emulator) getCPUSpeed() int {
-	speed := cpuSpeeds[emu.cpuSpeed]
+	speed := cpuSpeeds[emu.cpuSpeedIdx]
 	if emu.cpuMult {
 		speed *= 50
 	}
@@ -197,19 +197,23 @@ func (emu *Emulator) handleInput() {
 		emu.mute = !emu.mute
 	}
 	if emu.display.Window.JustPressed(pixelgl.KeyPageUp) {
-		if emu.cpuSpeed < len(cpuSpeeds)-1 {
-			emu.cpuSpeed++
+		if emu.cpuSpeedIdx == len(cpuSpeeds)-1 && !emu.cpuMult {
+			emu.cpuSpeedIdx = 0
+			emu.cpuMult = true
+		} else if emu.cpuSpeedIdx < len(cpuSpeeds)-1 {
+			emu.cpuSpeedIdx++
 		}
+
 		emu.display.DisplayCPUSpeed(emu.getCPUSpeed())
 	}
 	if emu.display.Window.JustPressed(pixelgl.KeyPageDown) {
-		if emu.cpuSpeed > 0 {
-			emu.cpuSpeed--
+		if emu.cpuSpeedIdx == 0 && emu.cpuMult {
+			emu.cpuSpeedIdx = len(cpuSpeeds) - 1
+			emu.cpuMult = false
+		} else if emu.cpuSpeedIdx > 0 {
+			emu.cpuSpeedIdx--
 		}
-		emu.display.DisplayCPUSpeed(emu.getCPUSpeed())
-	}
-	if emu.display.Window.JustPressed(pixelgl.KeyX) {
-		emu.cpuMult = !emu.cpuMult
+
 		emu.display.DisplayCPUSpeed(emu.getCPUSpeed())
 	}
 }
