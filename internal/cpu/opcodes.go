@@ -40,14 +40,14 @@ func (cpu *CPU) opcode0x00EE() {
 
 // 0x00FB - SCHIP - Scroll display 4 pixels right
 func (cpu *CPU) opcodeSChip0x00FB() {
-	cpu.vmem.ScrollLeft()
+	cpu.vmem.ScrollRight()
 	cpu.draw = true
 	cpu.PC += 2
 }
 
 // 0x00FC - SCHIP - Scroll display 4 pixels left
 func (cpu *CPU) opcodeSChip0x00FC() {
-	cpu.vmem.ScrollRight()
+	cpu.vmem.ScrollLeft()
 	cpu.draw = true
 	cpu.PC += 2
 }
