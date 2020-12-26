@@ -157,22 +157,22 @@ func (emu *Emulator) performEmulation() {
 
 func (emu *Emulator) handleInput() {
 	// CHIP-8 keys
-	emu.input[0] = emu.display.Window.Pressed(pixelgl.Key1)
-	emu.input[1] = emu.display.Window.Pressed(pixelgl.Key2)
-	emu.input[2] = emu.display.Window.Pressed(pixelgl.Key3)
-	emu.input[3] = emu.display.Window.Pressed(pixelgl.Key4)
+	emu.input[1] = emu.display.Window.Pressed(pixelgl.Key1)
+	emu.input[2] = emu.display.Window.Pressed(pixelgl.Key2)
+	emu.input[3] = emu.display.Window.Pressed(pixelgl.Key3)
+	emu.input[0xC] = emu.display.Window.Pressed(pixelgl.Key4)
 	emu.input[4] = emu.display.Window.Pressed(pixelgl.KeyQ)
 	emu.input[5] = emu.display.Window.Pressed(pixelgl.KeyW)
 	emu.input[6] = emu.display.Window.Pressed(pixelgl.KeyE)
-	emu.input[7] = emu.display.Window.Pressed(pixelgl.KeyR)
-	emu.input[8] = emu.display.Window.Pressed(pixelgl.KeyA)
-	emu.input[9] = emu.display.Window.Pressed(pixelgl.KeyS)
-	emu.input[10] = emu.display.Window.Pressed(pixelgl.KeyD)
-	emu.input[11] = emu.display.Window.Pressed(pixelgl.KeyF)
-	emu.input[12] = emu.display.Window.Pressed(pixelgl.KeyZ)
-	emu.input[13] = emu.display.Window.Pressed(pixelgl.KeyX)
-	emu.input[14] = emu.display.Window.Pressed(pixelgl.KeyC)
-	emu.input[15] = emu.display.Window.Pressed(pixelgl.KeyV)
+	emu.input[0xD] = emu.display.Window.Pressed(pixelgl.KeyR)
+	emu.input[7] = emu.display.Window.Pressed(pixelgl.KeyA)
+	emu.input[8] = emu.display.Window.Pressed(pixelgl.KeyS)
+	emu.input[9] = emu.display.Window.Pressed(pixelgl.KeyD)
+	emu.input[0xE] = emu.display.Window.Pressed(pixelgl.KeyF)
+	emu.input[0xA] = emu.display.Window.Pressed(pixelgl.KeyZ)
+	emu.input[0] = emu.display.Window.Pressed(pixelgl.KeyX)
+	emu.input[0xB] = emu.display.Window.Pressed(pixelgl.KeyC)
+	emu.input[0xF] = emu.display.Window.Pressed(pixelgl.KeyV)
 
 	// Commands
 	if emu.display.Window.JustPressed(pixelgl.KeyEscape) {
