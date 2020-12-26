@@ -95,6 +95,11 @@ func (cpu *CPU) Vmem() videomemory.VideoMemory {
 	return cpu.vmem
 }
 
+// AudioBuffer returns the audio buffer if available or otherwise nil
+func (cpu *CPU) AudioBuffer() *[16]byte {
+	return cpu.audioBuffer
+}
+
 // LoadRom loads the given ROM into the memory
 func (cpu *CPU) LoadRom(prog []byte) error {
 	if len(prog) <= len(cpu.mem)-0x200 {

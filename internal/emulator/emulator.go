@@ -5,6 +5,7 @@ import (
 
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/philw07/pich8-go/internal/cpu"
+	"github.com/philw07/pich8-go/internal/sound"
 )
 
 const (
@@ -21,6 +22,7 @@ type Emulator struct {
 	cpuMult     bool
 	display     Display
 	input       [16]bool
+	sound       sound.AudioPlayer
 
 	rom  []byte
 	mute bool
@@ -47,6 +49,7 @@ func NewEmulator() (*Emulator, error) {
 		cpu:         *cpu.NewCPU(),
 		cpuSpeedIdx: 2,
 		display:     *disp,
+		sound:       *sound.NewAudioPlayer(),
 
 		lastCycle:           now,
 		lastCorrectionCPU:   now,
@@ -147,7 +150,11 @@ func (emu *Emulator) performEmulation() {
 
 			for i := 0; i < reps; i++ {
 				if emu.cpu.ST > 0 && !emu.mute {
-					//TODO: Play sound
+					if emu.cpu.AudioBuffer() != nil {
+						emu.sound.PlayBuffer(*emu.cpu.AudioBuffer())
+					} else {
+						emu.sound.Beep()
+					}
 				}
 				emu.cpu.UpdateTimers()
 			}

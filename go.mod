@@ -3,6 +3,7 @@ module github.com/philw07/pich8-go
 go 1.15
 
 require (
+	github.com/faiface/beep v1.0.2
 	github.com/faiface/pixel v0.10.0
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/image v0.0.0-20190523035834-f03afa92d3ff
