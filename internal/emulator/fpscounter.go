@@ -4,10 +4,9 @@ import "time"
 
 // FpsCounter calculates the frames per second
 type FpsCounter struct {
-	start       time.Time
-	frames      int
-	fps         float64
-	previousFps float64
+	start  time.Time
+	frames int
+	fps    float64
 }
 
 // NewFpsCounter creates and initializes a new instance
@@ -23,13 +22,7 @@ func (fps *FpsCounter) Tick() float64 {
 
 	// Update fps value every second
 	if time.Since(fps.start).Seconds() >= 1 {
-		newFps := float64(fps.frames) / float64(time.Since(fps.start).Nanoseconds()) * 1_000_000_000
-		fps.previousFps = fps.fps
-		if fps.previousFps > 0 {
-			fps.fps = 0.33*fps.previousFps + 0.33*fps.fps + 0.34*newFps
-		} else {
-			fps.fps = newFps
-		}
+		fps.fps = float64(fps.frames) / float64(time.Since(fps.start).Nanoseconds()) * 1_000_000_000
 
 		fps.start = time.Now()
 		fps.frames = 0
