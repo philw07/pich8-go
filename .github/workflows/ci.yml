@@ -30,7 +30,7 @@ jobs:
 
     - name: Install dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get install -y libgl1-mesa-dev xorg-dev
+      run: sudo apt-get install -y libgl1-mesa-dev xorg-dev libasound2-dev
 
     - uses: actions/setup-go@v2
       with:
