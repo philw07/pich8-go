@@ -1,11 +1,15 @@
 package emulator
 
 import (
+	"fmt"
+	"io/ioutil"
 	"time"
 
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/philw07/pich8-go/internal/cpu"
+	"github.com/philw07/pich8-go/internal/data"
 	"github.com/philw07/pich8-go/internal/sound"
+	"github.com/sqweek/dialog"
 )
 
 const (
@@ -45,17 +49,22 @@ func NewEmulator() (*Emulator, error) {
 	}
 
 	now := time.Now()
-	return &Emulator{
+	emu := Emulator{
 		cpu:         *cpu.NewCPU(),
 		cpuSpeedIdx: 2,
 		display:     *disp,
 		sound:       *sound.NewAudioPlayer(),
 
+		rom: data.BootRom[:],
+
 		lastCycle:           now,
 		lastCorrectionCPU:   now,
 		lastTimer:           now,
 		lastCorrectionTimer: now,
-	}, nil
+}
+	emu.reset()
+
+	return &emu, nil
 }
 
 func (emu *Emulator) reset() error {
@@ -222,5 +231,22 @@ func (emu *Emulator) handleInput() {
 		}
 
 		emu.display.DisplayCPUSpeed(emu.getCPUSpeed())
+	}
+	if emu.display.Window.Pressed(pixelgl.KeyLeftControl) && emu.display.Window.JustPressed(pixelgl.KeyO) {
+		emu.setPause(true)
+		defer emu.setPause(false)
+
+		file, err := dialog.File().Title("Open ROM...").Load()
+		if err == nil {
+			data, err := ioutil.ReadFile(file)
+			if err != nil {
+				dialog.Message(fmt.Sprintf("Error occurred: %v", err)).Title("Error").Error()
+			} else {
+				err = emu.LoadRom(data)
+				if err != nil {
+					dialog.Message(fmt.Sprintf("Error occurred: %v", err)).Title("Error").Error()
+				}
+			}
+		}
 	}
 }
