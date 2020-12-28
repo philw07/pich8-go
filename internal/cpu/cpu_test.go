@@ -141,14 +141,14 @@ func TestOpcodes(t *testing.T) {
 	// 0xBNNN - Quirk
 	cpu = NewCPU()
 	cpu.LoadRom([]byte{0xB1, 0x23})
-	cpu.quirkJump = true
+	cpu.QuirkJump = true
 	cpu.V[1] = 0x11
 	cpu.emulateCycle()
 	assert.EqualValues(0x134, cpu.PC)
 	// 0xBNNN - No quirk
 	cpu = NewCPU()
 	cpu.LoadRom([]byte{0xB1, 0x23})
-	cpu.quirkJump = false
+	cpu.QuirkJump = false
 	cpu.V[0] = 0x11
 	cpu.emulateCycle()
 	assert.EqualValues(0x134, cpu.PC)
@@ -384,7 +384,7 @@ func TestOpcodes(t *testing.T) {
 	reg := []byte{0x12, 0x34, 0x56, 0x78, 0x9A, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	cpu = NewCPU()
 	cpu.LoadRom([]byte{0xF5, 0x55})
-	cpu.quirkLoadStore = true
+	cpu.QuirkLoadStore = true
 	cpu.I = 0x300
 	copy(cpu.V[:], reg[:])
 	cpu.emulateCycle()
@@ -395,7 +395,7 @@ func TestOpcodes(t *testing.T) {
 	// 0xFX55 - No quirk
 	cpu = NewCPU()
 	cpu.LoadRom([]byte{0xF5, 0x55})
-	cpu.quirkLoadStore = false
+	cpu.QuirkLoadStore = false
 	cpu.I = 0x300
 	copy(cpu.V[:], reg[:])
 	cpu.emulateCycle()
@@ -408,7 +408,7 @@ func TestOpcodes(t *testing.T) {
 	prog := []byte{0xF5, 0x65, 0xA9, 0x87, 0x65, 0x43, 0x21, 0xFF}
 	cpu = NewCPU()
 	cpu.LoadRom(prog)
-	cpu.quirkLoadStore = true
+	cpu.QuirkLoadStore = true
 	cpu.I = 0x202
 	cpu.emulateCycle()
 	assert.EqualValues(prog[2:8], cpu.V[:6])
@@ -418,7 +418,7 @@ func TestOpcodes(t *testing.T) {
 	// 0xFX55 - No quirk
 	cpu = NewCPU()
 	cpu.LoadRom(prog)
-	cpu.quirkLoadStore = false
+	cpu.QuirkLoadStore = false
 	cpu.I = 0x202
 	cpu.emulateCycle()
 	assert.EqualValues(prog[2:8], cpu.V[:6])
@@ -646,8 +646,8 @@ func testArithmeticV(assert *assert.Assertions, opcode uint16, v1, v2, res, resv
 func testArithmeticVNoQuirk(assert *assert.Assertions, opcode uint16, v1, v2, res, resv byte) {
 	cpu := NewCPU()
 	cpu.LoadRom([]byte{byte(opcode >> 8), byte(opcode)})
-	cpu.quirkLoadStore = false
-	cpu.quirkShift = false
+	cpu.QuirkLoadStore = false
+	cpu.QuirkShift = false
 	cpu.V[0] = v1
 	cpu.V[1] = v2
 	cpu.emulateCycle()

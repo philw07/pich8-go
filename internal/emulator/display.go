@@ -23,19 +23,21 @@ const (
 
 	c8Width  = 64
 	c8Height = 32
+
+	textMargin = 5
 )
 
 // Display represents a display for the CHIP-8 emulator
 type Display struct {
-	Window              *pixelgl.Window
-	fpsCounter          FpsCounter
-	fpsText             *text.Text
-	lastCPUSpeedTime    time.Time
-	cpuSpeedText        *text.Text
-	DisplayFps          bool
-	DisplayInstructions bool
-	instructionsText    *text.Text
-	imd                 *imdraw.IMDraw
+	Window               *pixelgl.Window
+	fpsCounter           FpsCounter
+	fpsText              *text.Text
+	lastNotificationTime time.Time
+	notificationText     *text.Text
+	DisplayFps           bool
+	DisplayInstructions  bool
+	instructionsText     *text.Text
+	imd                  *imdraw.IMDraw
 }
 
 // NewDisplay creates and initializes a new Display instance
@@ -74,11 +76,16 @@ func NewDisplay() (*Display, error) {
 	fmt.Fprintln(instuctionsText, "F3          VSync on/off")
 	fmt.Fprintln(instuctionsText, "F5          Reset")
 	fmt.Fprintln(instuctionsText, "F11         Fullscreen")
+	fmt.Fprintln(instuctionsText, "Ctrl + 1    Load/store quirk on/off")
+	fmt.Fprintln(instuctionsText, "Ctrl + 2    Shift quirk on/off")
+	fmt.Fprintln(instuctionsText, "Ctrl + 3    Jump quirk on/off")
+	fmt.Fprintln(instuctionsText, "Ctrl + 4    VF order quirk on/off")
+	fmt.Fprintln(instuctionsText, "Ctrl + 5    Draw quirk on/off")
 
 	return &Display{
 		Window:              win,
-		fpsText:             text.New(pixel.ZV, textAtlas),
-		cpuSpeedText:        text.New(pixel.ZV, textAtlas),
+		fpsText:             text.New(pixel.V(0, textMargin), textAtlas),
+		notificationText:    text.New(pixel.V(0, textMargin), textAtlas),
 		DisplayInstructions: true,
 		instructionsText:    instuctionsText,
 		imd:                 imdraw.New(nil),
@@ -99,11 +106,11 @@ func (disp *Display) ToggleVSync() {
 	disp.Window.SetVSync(!disp.Window.VSync())
 }
 
-// DisplayCPUSpeed displays the given speed for a short time
-func (disp *Display) DisplayCPUSpeed(speed int) {
-	disp.lastCPUSpeedTime = time.Now()
-	disp.cpuSpeedText.Clear()
-	fmt.Fprintf(disp.cpuSpeedText, "%vHz", speed)
+// DisplayNotification displays the given text for a short time
+func (disp *Display) DisplayNotification(text string) {
+	disp.lastNotificationTime = time.Now()
+	disp.notificationText.Clear()
+	fmt.Fprint(disp.notificationText, text)
 }
 
 // Draw draws the content of the given VideoMemory to the window
@@ -131,9 +138,9 @@ func (disp *Display) Draw(vmem videomemory.VideoMemory) {
 	}
 
 	// Display CPU speed
-	if time.Since(disp.lastCPUSpeedTime).Seconds() <= 2 {
-		xPos := disp.Window.Bounds().W() - disp.cpuSpeedText.Bounds().W()
-		disp.drawText(disp.cpuSpeedText, pixel.V(xPos, 0))
+	if time.Since(disp.lastNotificationTime).Seconds() <= 2 {
+		xPos := disp.Window.Bounds().W() - disp.notificationText.Bounds().W()
+		disp.drawText(disp.notificationText, pixel.V(xPos, 0))
 	}
 
 	// Display instructions
@@ -165,13 +172,11 @@ func (disp *Display) copyFrameToImage(vmem videomemory.VideoMemory) image.Image 
 }
 
 func (disp *Display) drawText(text *text.Text, pos pixel.Vec) {
-	const margin = 5
-
 	disp.imd.Clear()
 
 	disp.imd.Color = pixel.RGB(0.1, 0.1, 0.1).Mul(pixel.Alpha(0.85))
-	disp.imd.Push(text.Bounds().Min.Add(pos).Add(pixel.V(-margin, -margin)))
-	disp.imd.Push(text.Bounds().Max.Add(pos).Add(pixel.V(margin, margin)))
+	disp.imd.Push(text.Bounds().Min.Add(pos).Add(pixel.V(-textMargin, -textMargin)))
+	disp.imd.Push(text.Bounds().Max.Add(pos).Add(pixel.V(textMargin, textMargin)))
 	disp.imd.Rectangle(0)
 	disp.imd.Draw(disp.Window)
 

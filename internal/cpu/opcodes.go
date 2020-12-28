@@ -225,7 +225,7 @@ func (cpu *CPU) opcode0x8XY5(x, y byte) {
 // Original: Vx = Vy >> 1
 // Quirk:    Vx >>= 1
 func (cpu *CPU) opcode0x8XY6(x, y byte) {
-	if cpu.quirkShift {
+	if cpu.QuirkShift {
 		cpu.writeVf(x, cpu.V[x]>>1, cpu.V[x]&1)
 	} else {
 		cpu.writeVf(x, cpu.V[y]>>1, cpu.V[y]&1)
@@ -248,7 +248,7 @@ func (cpu *CPU) opcode0x8XY7(x, y byte) {
 // Original: Vx = Vy << 1
 // Quirk:    Vx <<= 1
 func (cpu *CPU) opcode0x8XYE(x, y byte) {
-	if cpu.quirkShift {
+	if cpu.QuirkShift {
 		cpu.writeVf(x, cpu.V[x]<<1, (cpu.V[x]&0x80)>>7)
 	} else {
 		cpu.writeVf(x, cpu.V[y]<<1, (cpu.V[x]&0x80)>>7)
@@ -275,7 +275,7 @@ func (cpu *CPU) opcode0xANNN(nnn uint16) {
 // Quirk:    PC = xnn + Vx
 func (cpu *CPU) opcode0xBNNN(nnn uint16) {
 	cpu.PC = nnn
-	if cpu.quirkJump {
+	if cpu.QuirkJump {
 		cpu.PC += uint16(cpu.V[(nnn >> 8 & 0xF)])
 	} else {
 		cpu.PC += uint16(cpu.V[0])
@@ -391,7 +391,7 @@ func (cpu *CPU) opcode0xFX55(x byte) {
 	start := cpu.I
 	end := cpu.I + uint16(x)
 	copy(cpu.mem[start:end+1], cpu.V[:x+1])
-	if !cpu.quirkLoadStore {
+	if !cpu.QuirkLoadStore {
 		cpu.I += uint16(x) + 1
 	}
 	cpu.PC += 2
@@ -404,7 +404,7 @@ func (cpu *CPU) opcode0xFX65(x byte) {
 	start := cpu.I
 	end := cpu.I + uint16(x)
 	copy(cpu.V[:x+1], cpu.mem[start:end+1])
-	if !cpu.quirkLoadStore {
+	if !cpu.QuirkLoadStore {
 		cpu.I += uint16(x) + 1
 	}
 	cpu.PC += 2
@@ -423,7 +423,7 @@ func (cpu *CPU) opcodeSChip0xFX85(x byte) {
 }
 
 func (cpu *CPU) writeVf(reg, value, vf byte) {
-	if cpu.quirkVfOrder {
+	if cpu.QuirkVfOrder {
 		cpu.V[reg] = value
 		cpu.V[0xF] = vf
 	} else {

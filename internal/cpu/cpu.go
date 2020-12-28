@@ -61,11 +61,11 @@ type CPU struct {
 	keyWait bool
 	keyReg  byte
 
-	quirkLoadStore    bool
-	quirkShift        bool
-	quirkJump         bool
-	quirkVfOrder      bool
-	quirkDraw         bool
+	QuirkLoadStore    bool
+	QuirkShift        bool
+	QuirkJump         bool
+	QuirkVfOrder      bool
+	QuirkDraw         bool
 	quirkPartialWrapH bool
 	quirkPartialWrapV bool
 }
@@ -76,11 +76,11 @@ func NewCPU() *CPU {
 		vmem:           *videomemory.NewVideoMemory(),
 		PC:             initialPC,
 		draw:           true,
-		quirkLoadStore: true,
-		quirkShift:     true,
-		quirkJump:      true,
-		quirkVfOrder:   true,
-		quirkDraw:      true,
+		QuirkLoadStore: true,
+		QuirkShift:     true,
+		QuirkJump:      true,
+		QuirkVfOrder:   true,
+		QuirkDraw:      true,
 	}
 
 	// Load font sets
@@ -300,7 +300,7 @@ func (cpu *CPU) drawSprite(x, y byte, height byte) {
 	x %= byte(cpu.vmem.Width())
 	y %= byte(cpu.vmem.Height())
 
-	bigSprite := (cpu.vmem.VideoMode == videomemory.ExtendedVideoMode || cpu.quirkDraw) && height == 0
+	bigSprite := (cpu.vmem.VideoMode == videomemory.ExtendedVideoMode || cpu.QuirkDraw) && height == 0
 	step := 1
 	width := 8
 	if bigSprite {

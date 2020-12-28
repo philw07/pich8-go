@@ -192,65 +192,97 @@ func (emu *Emulator) handleInput() {
 	emu.input[0xF] = emu.display.Window.Pressed(pixelgl.KeyV)
 
 	// Commands
-	if emu.display.Window.JustPressed(pixelgl.KeyEscape) {
-		emu.display.Window.SetClosed(true)
-	}
-	if emu.display.Window.JustPressed(pixelgl.KeyF1) {
-		emu.display.DisplayInstructions = !emu.display.DisplayInstructions
-	}
-	if emu.display.Window.JustPressed(pixelgl.KeyF2) {
-		emu.display.DisplayFps = !emu.display.DisplayFps
-	}
-	if emu.display.Window.JustPressed(pixelgl.KeyF3) {
-		emu.display.ToggleVSync()
-	}
-	if emu.display.Window.JustPressed(pixelgl.KeyF5) {
-		emu.reset()
-	}
-	if emu.display.Window.JustPressed(pixelgl.KeyF11) {
-		emu.display.ToggleFullscreen()
-	}
-	if emu.display.Window.JustPressed(pixelgl.KeyP) {
-		emu.setPause(!emu.pause)
-	}
-	if emu.display.Window.JustPressed(pixelgl.KeyM) {
-		emu.mute = !emu.mute
-	}
-	if emu.display.Window.JustPressed(pixelgl.KeyPageUp) {
-		if emu.cpuSpeedIdx == len(cpuSpeeds)-1 && !emu.cpuMult {
-			emu.cpuSpeedIdx = 0
-			emu.cpuMult = true
-		} else if emu.cpuSpeedIdx < len(cpuSpeeds)-1 {
-			emu.cpuSpeedIdx++
-		}
 
-		emu.display.DisplayCPUSpeed(emu.getCPUSpeed())
-	}
-	if emu.display.Window.JustPressed(pixelgl.KeyPageDown) {
-		if emu.cpuSpeedIdx == 0 && emu.cpuMult {
-			emu.cpuSpeedIdx = len(cpuSpeeds) - 1
-			emu.cpuMult = false
-		} else if emu.cpuSpeedIdx > 0 {
-			emu.cpuSpeedIdx--
-		}
+	if emu.display.Window.Pressed(pixelgl.KeyLeftControl) || emu.display.Window.Pressed(pixelgl.KeyRightControl) {
+		if emu.display.Window.JustPressed(pixelgl.KeyO) {
+			emu.setPause(true)
+			defer emu.setPause(false)
 
-		emu.display.DisplayCPUSpeed(emu.getCPUSpeed())
-	}
-	if emu.display.Window.Pressed(pixelgl.KeyLeftControl) && emu.display.Window.JustPressed(pixelgl.KeyO) {
-		emu.setPause(true)
-		defer emu.setPause(false)
-
-		file, err := dialog.File().Title("Open ROM...").Load()
-		if err == nil {
-			data, err := ioutil.ReadFile(file)
-			if err != nil {
-				dialog.Message(fmt.Sprintf("Error occurred: %v", err)).Title("Error").Error()
-			} else {
-				err = emu.LoadRom(data)
+			file, err := dialog.File().Title("Open ROM...").Load()
+			if err == nil {
+				data, err := ioutil.ReadFile(file)
 				if err != nil {
 					dialog.Message(fmt.Sprintf("Error occurred: %v", err)).Title("Error").Error()
+				} else {
+					err = emu.LoadRom(data)
+					if err != nil {
+						dialog.Message(fmt.Sprintf("Error occurred: %v", err)).Title("Error").Error()
+					}
 				}
 			}
 		}
+		if emu.display.Window.JustPressed(pixelgl.Key1) {
+			emu.cpu.QuirkLoadStore = !emu.cpu.QuirkLoadStore
+			emu.display.DisplayNotification(emu.quirkText("Load/store quirk", emu.cpu.QuirkLoadStore))
+		}
+		if emu.display.Window.JustPressed(pixelgl.Key2) {
+			emu.cpu.QuirkShift = !emu.cpu.QuirkShift
+			emu.display.DisplayNotification(emu.quirkText("Shift quirk", emu.cpu.QuirkShift))
+		}
+		if emu.display.Window.JustPressed(pixelgl.Key3) {
+			emu.cpu.QuirkJump = !emu.cpu.QuirkJump
+			emu.display.DisplayNotification(emu.quirkText("Jump quirk", emu.cpu.QuirkJump))
+		}
+		if emu.display.Window.JustPressed(pixelgl.Key4) {
+			emu.cpu.QuirkVfOrder = !emu.cpu.QuirkVfOrder
+			emu.display.DisplayNotification(emu.quirkText("VF order quirk", emu.cpu.QuirkVfOrder))
+		}
+		if emu.display.Window.JustPressed(pixelgl.Key5) {
+			emu.cpu.QuirkDraw = !emu.cpu.QuirkDraw
+			emu.display.DisplayNotification(emu.quirkText("Draw quirk", emu.cpu.QuirkDraw))
+		}
+	} else {
+		if emu.display.Window.JustPressed(pixelgl.KeyEscape) {
+			emu.display.Window.SetClosed(true)
+		}
+		if emu.display.Window.JustPressed(pixelgl.KeyF1) {
+			emu.display.DisplayInstructions = !emu.display.DisplayInstructions
+		}
+		if emu.display.Window.JustPressed(pixelgl.KeyF2) {
+			emu.display.DisplayFps = !emu.display.DisplayFps
+		}
+		if emu.display.Window.JustPressed(pixelgl.KeyF3) {
+			emu.display.ToggleVSync()
+		}
+		if emu.display.Window.JustPressed(pixelgl.KeyF5) {
+			emu.reset()
+		}
+		if emu.display.Window.JustPressed(pixelgl.KeyF11) {
+			emu.display.ToggleFullscreen()
+		}
+		if emu.display.Window.JustPressed(pixelgl.KeyP) {
+			emu.setPause(!emu.pause)
+		}
+		if emu.display.Window.JustPressed(pixelgl.KeyM) {
+			emu.mute = !emu.mute
+		}
+		if emu.display.Window.JustPressed(pixelgl.KeyPageUp) {
+			if emu.cpuSpeedIdx == len(cpuSpeeds)-1 && !emu.cpuMult {
+				emu.cpuSpeedIdx = 0
+				emu.cpuMult = true
+			} else if emu.cpuSpeedIdx < len(cpuSpeeds)-1 {
+				emu.cpuSpeedIdx++
+			}
+
+			emu.display.DisplayNotification(fmt.Sprintf("CPU Speed: %vHz", emu.getCPUSpeed()))
+		}
+		if emu.display.Window.JustPressed(pixelgl.KeyPageDown) {
+			if emu.cpuSpeedIdx == 0 && emu.cpuMult {
+				emu.cpuSpeedIdx = len(cpuSpeeds) - 1
+				emu.cpuMult = false
+			} else if emu.cpuSpeedIdx > 0 {
+				emu.cpuSpeedIdx--
+			}
+
+			emu.display.DisplayNotification(fmt.Sprintf("CPU Speed: %vHz", emu.getCPUSpeed()))
+		}
 	}
+}
+
+func (emu *Emulator) quirkText(quirk string, active bool) string {
+	if active {
+		return fmt.Sprintf("%v ON", quirk)
+	}
+
+	return fmt.Sprintf("%v OFF", quirk)
 }
