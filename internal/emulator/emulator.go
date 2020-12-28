@@ -61,7 +61,7 @@ func NewEmulator() (*Emulator, error) {
 		lastCorrectionCPU:   now,
 		lastTimer:           now,
 		lastCorrectionTimer: now,
-}
+	}
 	emu.reset()
 
 	return &emu, nil
@@ -77,6 +77,7 @@ func (emu *Emulator) reset() error {
 
 // LoadRom loads the given ROM into the emulator
 func (emu *Emulator) LoadRom(rom []byte) error {
+	emu.display.DisplayInstructions = false
 	emu.rom = rom
 	return emu.reset()
 }
@@ -195,9 +196,12 @@ func (emu *Emulator) handleInput() {
 		emu.display.Window.SetClosed(true)
 	}
 	if emu.display.Window.JustPressed(pixelgl.KeyF1) {
-		emu.display.DisplayFps = !emu.display.DisplayFps
+		emu.display.DisplayInstructions = !emu.display.DisplayInstructions
 	}
 	if emu.display.Window.JustPressed(pixelgl.KeyF2) {
+		emu.display.DisplayFps = !emu.display.DisplayFps
+	}
+	if emu.display.Window.JustPressed(pixelgl.KeyF3) {
 		emu.display.ToggleVSync()
 	}
 	if emu.display.Window.JustPressed(pixelgl.KeyF5) {
