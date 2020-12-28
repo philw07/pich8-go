@@ -1,9 +1,11 @@
 package emulator
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/color"
+	_ "image/png"
 	"math"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
+	"github.com/philw07/pich8-go/internal/data"
 	"github.com/philw07/pich8-go/internal/videomemory"
 	"golang.org/x/image/font/basicfont"
 )
@@ -40,12 +43,18 @@ func NewDisplay() (*Display, error) {
 	montitorWidth, monitorHeight := pixelgl.PrimaryMonitor().Size()
 
 	cfg := pixelgl.WindowConfig{
-		Title: windowTitle,
-		// Icon: TODO:
+		Title:     windowTitle,
 		Bounds:    pixel.R(0, 0, 10*c8Width, 10*c8Height),
 		Position:  pixel.V(montitorWidth/2-5*c8Width, monitorHeight/2-5*c8Height),
 		VSync:     false,
 		Resizable: true,
+	}
+
+	// Get icon
+	iconImage, _, err := image.Decode(bytes.NewReader(data.Icon[:]))
+	if err == nil {
+		icon := pixel.PictureDataFromImage(iconImage)
+		cfg.Icon = []pixel.Picture{icon}
 	}
 
 	win, err := pixelgl.NewWindow(cfg)
