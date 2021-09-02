@@ -4,13 +4,11 @@ go 1.15
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/faiface/beep v1.0.2
+	github.com/faiface/beep v1.1.0
 	github.com/faiface/pixel v0.10.0
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20201108214237-06ea97f0c265 // indirect
 	github.com/go-gl/mathgl v1.0.0 // indirect
-	github.com/hajimehoshi/oto v0.7.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sqweek/dialog v0.0.0-20200911184034-8a3d98e8211d
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/exp v0.0.0-20201221025956-e89b829e73ea // indirect
